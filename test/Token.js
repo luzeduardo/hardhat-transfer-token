@@ -58,5 +58,23 @@ describe("Token contract", () => {
 
       expect(await hardToken.balanceOf(owner.address)).to.equal(initialOwnerBalance);
     });
+
+    it("Should update balances after transfers", async () => {
+      const initialOwnerBalance = await hardToken.balanceOf(owner.address);
+
+      //transfer from owner to address1
+      await hardToken.transfer(address1.address, 100);
+      await hardToken.transfer(address2.address, 50);
+
+      //check balances
+      const finalOwnerBalance = await hardToken.balanceOf(owner.address);
+      expect(finalOwnerBalance).to.equal(initialOwnerBalance.sub(150));
+
+      const address1Balance = await hardToken.balanceOf(address1.address)
+      expect(address1Balance).to.equal(100);
+
+      const address2Balance = await hardToken.balanceOf(address2.address)
+      expect(address2Balance).to.equal(50);
+    });
   });
 });
