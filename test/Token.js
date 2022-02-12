@@ -1,19 +1,19 @@
 const { expect } = require('chai');
 
-describe("Token contract", function() {
+describe("Token contract", () => {
   let Token;
   let hardToken;
   let owner;
-  let addr1;
-  let addr2;
+  let address1;
+  let address2;
   let addrs;
 
-  beforeEach(async function () {
+  beforeEach(async () => {
     // ethers available in global scope
     //ContractFactory an abstraction  to deploy new Contracts
     Token = await ethers.getContractFactory("Token");
     // Signer represents an Ethereum account
-    [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
+    [owner, address1, address2, ...addrs] = await ethers.getSigners();
 
     // To deploy our contract, we just have to call Token.deploy() and await
     // for it to be deployed(), which happens once its transaction has been
@@ -21,7 +21,7 @@ describe("Token contract", function() {
     hardToken = await Token.deploy();
   });
 
-  describe("Deployment", function () {
+  describe("Deployment", () => {
     it("Deploy should apply the total supply tokens to the owner", async () => {
       //once the Contract is deployed we can call Contract methods on hardToken
       const ownerBalance = await hardToken.balanceOf(owner.address);
@@ -38,19 +38,25 @@ describe("Token contract", function() {
       expect(totalSupply).to.equal(ownerBalance); 
     });
   });
-});
 
-describe("Transactions", function() {
-  it("Should transfer tokens between accounts", async function() {
-    const [owner, address1, address2] = await ethers.getSigners();
-    const Token = await ethers.getContractFactory("Token");
-    const hardToken = await Token.deploy();
+  describe("Transactions", () => {
+    it("Should transfer tokens between accounts", async () => {
+      await hardToken.transfer(address1.address, 50);
+      expect(await hardToken.balanceOf(address1.address)).to.equal(50);
 
-    await hardToken.transfer(address1.address, 50);
-    expect(await hardToken.balanceOf(address1.address)).to.equal(50);
+      await hardToken.connect(address1).transfer(address2.address, 50);
+      expect(await hardToken.balanceOf(address2.address)).to.equal(50);
+      expect(await hardToken.balanceOf(address1.address)).to.equal(0);
+    });
 
-    await hardToken.connect(address1).transfer(address2.address, 50);
-    expect(await hardToken.balanceOf(address2.address)).to.equal(50);
-    expect(await hardToken.balanceOf(address1.address)).to.equal(0);
+    it("Should fail if sender doesn’t have enough tokens", async () => {
+      //require will revert the transaction
+      const initialOwnerBalance = await hardToken.balanceOf(owner.address);
+      await expect(
+        hardToken.connect(address1).transfer(owner.address, 25)
+      ).to.be.revertedWith("Not enought tokens!");
+
+      expect(await hardToken.balanceOf(owner.address)).to.equal(initialOwnerBalance);
+    });
   });
 });
